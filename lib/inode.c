@@ -1632,7 +1632,12 @@ static int erofs_mkfs_handle_directory(struct erofs_importer *im, struct erofs_i
 			goto err_closedir;
 		}
 
+#ifndef __APPLE__
 		if (is_dot_dotdot(dp->d_name)) {
+#else
+		if (is_dot_dotdot(dp->d_name) ||
+			!strncmp(dp->d_name, ".DS_Store", 9)) {
+#endif
 			++i_nlink;
 			continue;
 		}
