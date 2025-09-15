@@ -129,13 +129,6 @@ build()
 	fi
 }
 
-build "Android" "arm64-v8a" "android-31"
-build "Android" "armeabi-v7a" "android-31"
-build "Android" "x86_64" "android-31"
-build "Android" "x86" "android-31"
 build "Linux" "x86_64"
-build "Linux" "x86_64" "WSL"
-build "Linux" "aarch64"
-build "Linux" "loongarch64"
 
 exit 0
