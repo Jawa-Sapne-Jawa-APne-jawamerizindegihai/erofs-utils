@@ -237,7 +237,7 @@ void ExtractOperation::extractFsConfigAndSelinuxLabelAndFsOptions() const {
                                       "%s "                 //output image file
                                       "%s",                 //input dir
                         isBigPcluster ? "-C 16384 " : "",     // default 16K
-                        g_sbi.build_time, uuid,
+                        (uint64_t)g_sbi.build_time, uuid,
                         imgBaseName.c_str(), 
                         fsConfigPath.c_str(), fsSelinuxLabelsPath.c_str(),
                         (imgBaseName + "_repack.img").c_str(),
