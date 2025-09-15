@@ -200,17 +200,13 @@ void ExtractOperation::extractFsConfigAndSelinuxLabelAndFsOptions() const {
     char uuid[37] = {0};
 
     const char *mountPointForContexts;
-    string fileContextPrefix;
-
     // If the image is a system partition, treat it as the root ("/").
     // This prevents duplicating the mount point in the path (e.g., "/system/system/app").
     if (imgBaseName == "system" || imgBaseName == "system_a" || imgBaseName == "system_b") {
         mountPointForContexts = "";
-        fileContextPrefix = "";
     } else {
         // For all other partitions (vendor, product, etc.), use the partition name as the mount point.
         mountPointForContexts = imgBaseName.c_str();
-        fileContextPrefix = "/" + imgBaseName;
     }
 
     LOGCI(BROWN "fs_config|file_contexts|fs_options" LOG_RESET_COLOR "  " GREEN2_BOLD "saving..." LOG_RESET_COLOR);
@@ -218,16 +214,9 @@ void ExtractOperation::extractFsConfigAndSelinuxLabelAndFsOptions() const {
         for (auto &eNode: erofsNodes) {
             if (otherPathsInRootDir.count(eNode->getPath()) > 0) continue;
 
-            string fullPath = fileContextPrefix + eNode->getPath();
-            // Special handling for the root directory of the image to avoid double slashes.
-            if (eNode->getPath() == "/") {
-                fullPath = "/";
-            }
-
             eNode->writeFsConfig2File(fsConfigFile, mountPointForContexts);
-            if (!eNode->getSelinuxLabel().empty()) {
-                eNode->writeSelinuxLabel2File(selinuxLabelsFile, fullPath.c_str());
-            }
+            if (!eNode->getSelinuxLabel().empty())
+                eNode->writeSelinuxLabel2File(selinuxLabelsFile, mountPointForContexts);
         }
 
         if (!isExtractTargetConfig) {
@@ -236,17 +225,17 @@ void ExtractOperation::extractFsConfigAndSelinuxLabelAndFsOptions() const {
                 auto time = static_cast<time_t>(g_sbi.build_time);
                 erofs_uuid_unparse_lower(g_sbi.uuid, uuid);
                 bool isBigPcluster = le32_to_cpu(g_sbi.feature_incompat) & EROFS_FEATURE_INCOMPAT_BIG_PCLUSTER;
-                fprintf(mkfsOptionFile, "Filesystem created:        %s", ctime(&time));
-                fprintf(mkfsOptionFile, "Filesystem UUID:           %s\n", uuid);
-                fprintf(mkfsOptionFile, "mkfs.erofs options:          "
-                                        "-zlz4hc "      // default: lz4hc
-                                        "%s"
-                                        "-T %" PRIu64 " -U %s "
-                                        "--mount-point=/%s "
-                                        "--fs-config-file=%s "
-                                        "--file-contexts=%s "
-                                        "%s "          //output image file
-                                        "%s",          //input dir
+                fprintf(mkfsOptionFile, "Filesystem created:       %s", ctime(&time));
+                fprintf(mkfsOptionFile, "Filesystem UUID:            %s\n", uuid);
+                fprintf(mkfsOptionFile, "mkfs.erofs options:         "
+                                      "-zlz4hc "            // default: lz4hc
+                                      "%s"
+                                      "-T %" PRIu64 " -U %s "
+                                      "--mount-point=/%s "
+                                      "--fs-config-file=%s "
+                                      "--file-contexts=%s "
+                                      "%s "                 //output image file
+                                      "%s",                 //input dir
                         isBigPcluster ? "-C 16384 " : "",     // default 16K
                         (uint64_t)g_sbi.build_time, uuid,
                         imgBaseName.c_str(),
